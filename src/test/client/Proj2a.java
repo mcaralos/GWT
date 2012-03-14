@@ -30,7 +30,11 @@ public class Proj2a implements EntryPoint, ClickHandler
    ArrayList<MyStudent> students;
    JsArray<Student> jsonData;
    Button addButton = new Button("Add");
+   Button deleteButton = new Button("Delete");
+   Button editButton = new Button("Edit");
+   MyStudent selectedStudent = null;
    Button addStudentButton = new Button("Add Student");
+   Button editStudentButton = new Button("Edit Student");
    TextBox fnBox = new TextBox();
    TextBox lnBox = new TextBox();
    TextBox majBox = new TextBox();
@@ -55,7 +59,10 @@ public class Proj2a implements EntryPoint, ClickHandler
 	 String url = baseURL + "/students/index.json";
 	 getRequest(url,"getStudents");
 	 addButton.addClickHandler(this);
+	 deleteButton.addClickHandler(this);
+	 editButton.addClickHandler(this);
 	 addStudentButton.addClickHandler(this);
+	 editStudentButton.addClickHandler(this);
 	 RootPanel.get().add(mainPanel);
 	 //setupAddStudent();
    }
@@ -77,6 +84,29 @@ public class Proj2a implements EntryPoint, ClickHandler
       }
       else if (source == addButton) {
          setupAddStudent();
+      }
+      else if (source == deleteButton) {
+         String url = baseURL + "/students/deleteStudent";
+         String postData = URL.encode("student_id") + "=" +
+            URL.encode("" + selectedStudent.id);
+         postRequest(url,postData,"deleteStudent");
+      }
+      else if (source == editButton) {
+         setupEditStudent();
+      }
+      else if (source == editStudentButton) {
+    	 String url = baseURL + "/students/editStudent";
+         String postData = URL.encode("first_name") + "=" +
+            URL.encode(fnBox.getText().trim()) + "&" +
+            URL.encode("last_name") + "=" +
+            URL.encode(lnBox.getText().trim()) + "&" +
+            URL.encode("major") + "=" +
+            URL.encode(majBox.getText().trim()) + "&" +
+            URL.encode("student_id") + "=" + URL.encode("" + selectedStudent.id);
+         fnBox.setText("");
+         lnBox.setText("");
+         majBox.setText("");
+         postRequest(url,postData,"editStudent");	  
       }
    }
 
@@ -122,7 +152,9 @@ public class Proj2a implements EntryPoint, ClickHandler
 		    public void onResponseReceived(final Request request,
 		       final Response response)
 		    {
-		       if (postType.equals("postStudent")) {
+		       if (postType.equals("postStudent") ||
+		    	   postType.equals("deleteStudent") ||
+		    	   postType.equals("editStudent")) {
 		          mainPanel.clear();
 		          String url = baseURL + "/students/index.json";
 		          getRequest(url,"getStudents");
@@ -134,8 +166,6 @@ public class Proj2a implements EntryPoint, ClickHandler
 		 Window.alert(e.getMessage());
 	  }
    } // end postRequest()
-
-   
    private void showStudents(String responseText)
    {
       jsonData = getData(responseText);
@@ -185,7 +215,7 @@ public class Proj2a implements EntryPoint, ClickHandler
         	 {
         	    MyStudent selected = selectionModel.getSelectedObject();
         		if (selected != null) {
-        		   Window.alert("id: " + selected.id);
+        		   selectedStudent = selected;
         		}
         	 }
           });
@@ -196,7 +226,11 @@ public class Proj2a implements EntryPoint, ClickHandler
        table.addColumn(majCol, "Major");
        table.setRowCount(students.size(),true);
        table.setRowData(0,students);
-       mainPanel.add(addButton);
+       HorizontalPanel buttonRow = new HorizontalPanel();
+       buttonRow.add(addButton);
+       buttonRow.add(deleteButton);
+       buttonRow.add(editButton);
+       mainPanel.add(buttonRow);
        mainPanel.add(table);  
    }// end showStudents()
    private void setupAddStudent()
@@ -221,8 +255,31 @@ public class Proj2a implements EntryPoint, ClickHandler
       addStudentPanel.add(addStudentButton);
       mainPanel.add(addStudentPanel);
    }
-
-   
+   private void setupEditStudent()
+   {
+      mainPanel.clear();
+	  VerticalPanel editStudentPanel = new VerticalPanel();
+	  Label fnLabel = new Label("First Name");
+	  HorizontalPanel fnRow = new HorizontalPanel();
+	  fnRow.add(fnLabel);
+	  fnRow.add(fnBox);
+	  editStudentPanel.add(fnRow);
+	  Label lnLabel = new Label("Last Name");
+	  HorizontalPanel lnRow = new HorizontalPanel();
+	  lnRow.add(lnLabel);
+	  lnRow.add(lnBox);
+	  editStudentPanel.add(lnRow);
+	  Label majLabel = new Label("Major");
+	  HorizontalPanel majRow = new HorizontalPanel();
+	  majRow.add(majLabel);
+	  majRow.add(majBox);
+	  editStudentPanel.add(majRow);
+	  editStudentPanel.add(editStudentButton);
+	  mainPanel.add(editStudentPanel);
+	  fnBox.setText(selectedStudent.first_name);
+	  lnBox.setText(selectedStudent.last_name);
+	  majBox.setText(selectedStudent.major);
+   }
    private JsArray<Student> getData(String json)
    {
       return JsonUtils.safeEval(json);
